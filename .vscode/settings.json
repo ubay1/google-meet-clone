@@ -1,0 +1,67 @@
+{
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 5000,
+  "editor.wordWrap": "on",
+  "editor.renderWhitespace": "all",
+  "editor.renderControlCharacters": true,
+  "editor.trimAutoWhitespace": true,
+  "editor.rulers": [
+    {
+      "column": 2,
+      "color": "#88888820"
+    },
+    {
+      "column": 4,
+      "color": "#88888820"
+    },
+    {
+      "column": 6,
+      "color": "#88888820"
+    },
+    {
+      "column": 8,
+      "color": "#88888820"
+    },
+    {
+      "column": 10,
+      "color": "#88888820"
+    },
+    {
+      "column": 12,
+      "color": "#88888820"
+    },
+    {
+      "column": 100,
+      "color": "#ff0000"
+    },
+    {
+      "column": 120,
+      "color": "#ff0000"
+    }
+  ],
+  "breadcrumbs.enabled": true,
+  "breadcrumbs.filePath": "on",
+  "files.exclude": {
+    "**/node_modules": true,
+  },
+  /* eslint */
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.formatOnSave": true,
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  }
+}

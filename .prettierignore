@@ -1,0 +1,10 @@
+node_modules
+.cache
+.next
+*.md
+*.json
+*.yml
+*.yaml
+.eslintrc
+.npmrc
+.prettierrc
