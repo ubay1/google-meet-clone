@@ -279,6 +279,24 @@ export default function SetupV2() {
   }
 
   function finishSetup() {
+    if (ref1.current.srcObject) {
+      const stream = ref1.current.srcObject
+      // console.log("stream off = ", stream);
+      const tracks = stream.getTracks()
+      tracks.forEach((track: any) => {
+        track.stop()
+      })
+      ref1.current.srcObject = null
+    }
+    if (ref2.current.srcObject) {
+      const stream = ref2.current.srcObject
+      // console.log("stream off = ", stream);
+      const tracks = stream.getTracks()
+      tracks.forEach((track: any) => {
+        track.stop()
+      })
+      ref2.current.srcObject = null
+    }
     setFinishSetup(true)
   }
 
