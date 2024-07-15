@@ -3,14 +3,18 @@ import { devtools } from 'zustand/middleware'
 import { InputOutput, statusPermissions } from '../types/permissions'
 
 interface UserState {
+  roomName: string
   name: string
+  setRoomName: (value: string) => void
   setName: (value: string) => void
 }
 export const useUserStore = create<UserState>()(
   devtools(
     // persist(
     (set) => ({
+      roomName: '',
       name: '',
+      setRoomName: (value: string) => set(() => ({ roomName: value })),
       setName: (value: string) => set(() => ({ name: value })),
     }),
     { name: 'user-storage' },

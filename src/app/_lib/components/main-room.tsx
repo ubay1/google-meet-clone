@@ -1,10 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useRef, useState, FC, useContext } from 'react'
 import Peer from 'peerjs'
-import { Box, Button, Flex, IconButton } from '@radix-ui/themes'
+import { Avatar, Box, Button, Flex, Grid, IconButton, Separator, Text } from '@radix-ui/themes'
 import { StreamContext } from '@lib/context/stream'
-import { useSetupStore } from '@lib/stores/join-room'
+import { useSetupStore, useUserStore } from '@lib/stores/join-room'
 import { Icon } from '@iconify/react'
+import Clock from './Clock'
 
 interface IProps {
   params: string
@@ -23,6 +24,7 @@ const MainRoom: FC<IProps> = () => {
   let localVideoStream: any = null
   let localAudioStream: any = null
 
+  const { name, roomName } = useUserStore()
   const {
     statusPermissionCamera,
     statusPermissionMicrophone,
@@ -192,6 +194,11 @@ const MainRoom: FC<IProps> = () => {
             height={{ initial: '400px' }}
             className="relative rounded-lg bg-gray-800 text-white flex justify-center items-center"
           >
+            {!isCameraActive && (
+              <Flex position="absolute" justify="center" width="100%">
+                <Avatar fallback={name.slice(0, 1)} size="8" radius="full" variant="solid" />
+              </Flex>
+            )}
             <audio ref={ref2} hidden controls autoPlay playsInline></audio>
             <video
               ref={ref1}
@@ -199,61 +206,99 @@ const MainRoom: FC<IProps> = () => {
               playsInline
               className="h-[calc(100%+2px)] w-[calc(100%+2px)] object-cover aspect-video scale-x-[-1] rounded-lg"
             ></video>
-
-            <Box className="absolute bottom-4 flex items-center flex-col gap-4">
-              {statusPermissionCamera !== 'aktif' || statusPermissionMicrophone !== 'aktif' ? (
-                <Button
-                  variant="classic"
-                  size="3"
-                  radius="full"
-                  className="cursor-pointer disabled:cursor-not-allowed w-auto"
-                  onClick={startMicAndCam}
-                >
-                  Allow camera & microphone
-                </Button>
-              ) : (
-                <></>
-              )}
-
-              <Box className="flex items-center gap-4">
-                <Box className="flex items-center gap-4">
-                  <IconButton
-                    variant={isMicrophoneActive ? 'outline' : 'classic'}
-                    color={isMicrophoneActive ? 'gray' : 'red'}
-                    radius="full"
-                    size="3"
-                    className="cursor-pointer"
-                    onClick={startMicrophone}
-                  >
-                    {isMicrophoneActive ? (
-                      <Icon icon="mage:microphone" width={24} height={24} />
-                    ) : (
-                      <Icon icon="mage:microphone-mute" width={24} height={24} />
-                    )}
-                  </IconButton>
-                </Box>
-
-                <Box className="flex items-center gap-4">
-                  <IconButton
-                    variant={isCameraActive ? 'outline' : 'classic'}
-                    color={isCameraActive ? 'gray' : 'red'}
-                    radius="full"
-                    size="3"
-                    className="cursor-pointer"
-                    onClick={startCamera}
-                  >
-                    {isCameraActive ? (
-                      <Icon icon="fluent:video-32-regular" width={24} height={24} />
-                    ) : (
-                      <Icon icon="fluent:video-off-32-regular" width={24} height={24} />
-                    )}
-                  </IconButton>
-                </Box>
-              </Box>
+            <Box position="absolute" left="4" bottom="4">
+              <Text size="3">{name}</Text>
             </Box>
           </Box>
         </Flex>
       </Flex>
+
+      <Box className="fixed bottom-0 w-full h-20 bg-gray-800 px-4">
+        <Grid columns="3" height="100%">
+          <Flex justify="start" align="center" gap="2">
+            <Clock />
+            <Separator orientation="vertical" className="bg-white" />
+            <Text size="4" truncate>
+              {roomName}
+            </Text>
+          </Flex>
+
+          <Flex justify="center" align="center" gap="2">
+            <Box className="flex items-center gap-4">
+              <IconButton
+                variant={isMicrophoneActive ? 'outline' : 'classic'}
+                color={isMicrophoneActive ? 'gray' : 'red'}
+                radius="full"
+                size="3"
+                className="cursor-pointer"
+                onClick={startMicrophone}
+              >
+                {isMicrophoneActive ? (
+                  <Icon icon="mage:microphone" width={24} height={24} />
+                ) : (
+                  <Icon icon="mage:microphone-mute" width={24} height={24} />
+                )}
+              </IconButton>
+            </Box>
+
+            <Box className="flex items-center gap-4">
+              <IconButton
+                variant={isCameraActive ? 'outline' : 'classic'}
+                color={isCameraActive ? 'gray' : 'red'}
+                radius="full"
+                size="3"
+                className="cursor-pointer"
+                onClick={startCamera}
+              >
+                {isCameraActive ? (
+                  <Icon icon="fluent:video-32-regular" width={24} height={24} />
+                ) : (
+                  <Icon icon="fluent:video-off-32-regular" width={24} height={24} />
+                )}
+              </IconButton>
+            </Box>
+            <Box className="flex items-center gap-4">
+              <IconButton
+                variant="outline"
+                color="gray"
+                radius="full"
+                size="3"
+                className="cursor-pointer"
+                onClick={startCamera}
+              >
+                <Icon icon="tabler:device-desktop-share" width={24} height={24} />
+              </IconButton>
+            </Box>
+            <Box className="flex items-center gap-4">
+              <IconButton
+                variant="classic"
+                color="red"
+                radius="full"
+                size="3"
+                className="cursor-pointer"
+                onClick={startCamera}
+              >
+                <Icon icon="majesticons:phone-hangup-line" width={24} height={24} />
+              </IconButton>
+            </Box>
+          </Flex>
+
+          <Flex justify="end" align="center" gap="2">
+            <Box className="flex items-center gap-4">
+              <IconButton
+                variant="ghost"
+                color="gray"
+                radius="full"
+                size="4"
+                className="cursor-pointer text-white"
+                onClick={startCamera}
+              >
+                <Icon icon="mingcute:message-4-line" width={24} height={24} />
+              </IconButton>
+            </Box>
+          </Flex>
+        </Grid>
+      </Box>
     </Box>
   )
 }

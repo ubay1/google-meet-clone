@@ -19,7 +19,7 @@ export default function SetupV2() {
   const { theme } = useTheme()
   const router = useRouter()
 
-  const { name, setName } = useUserStore()
+  const { roomName, name, setRoomName, setName } = useUserStore()
 
   const {
     // localVideo,
@@ -489,16 +489,33 @@ export default function SetupV2() {
               </Grid>
             </Box>
 
-            <TextField.Root
-              placeholder="Masukkan nama"
-              size="3"
-              value={name || ''}
-              onChange={(e) => setName(e.target.value)}
-            >
-              <TextField.Slot>
-                <Icon icon="flowbite:profile-card-solid" width={20} height={20} />
-              </TextField.Slot>
-            </TextField.Root>
+            <Flex direction={{ initial: 'column', sm: 'row' }} gap="4">
+              <Box width={{ initial: '100%', sm: '50%' }}>
+                <TextField.Root
+                  placeholder="Masukkan nama room"
+                  size="3"
+                  value={roomName || ''}
+                  onChange={(e) => setRoomName(e.target.value)}
+                >
+                  <TextField.Slot>
+                    <Icon icon="majesticons:door-enter" width={20} height={20} />
+                  </TextField.Slot>
+                </TextField.Root>
+              </Box>
+
+              <Box width={{ initial: '100%', sm: '50%' }}>
+                <TextField.Root
+                  placeholder="Masukkan nama kamu"
+                  size="3"
+                  value={name || ''}
+                  onChange={(e) => setName(e.target.value)}
+                >
+                  <TextField.Slot>
+                    <Icon icon="flowbite:profile-card-solid" width={20} height={20} />
+                  </TextField.Slot>
+                </TextField.Root>
+              </Box>
+            </Flex>
           </Flex>
 
           <Box
@@ -513,7 +530,7 @@ export default function SetupV2() {
               size="3"
               radius="full"
               className="cursor-pointer disabled:cursor-not-allowed w-auto"
-              disabled={isEmpty(name)}
+              disabled={isEmpty(name) || isEmpty(roomName)}
               onClick={finishSetup}
             >
               Gabung sekarang

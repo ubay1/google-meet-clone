@@ -4,7 +4,6 @@ import { Inter } from 'next/font/google'
 import { Theme } from '@radix-ui/themes'
 import '@radix-ui/themes/styles.css'
 import '@lib/css/globals.css'
-import ThemeToogle from '@/app/_lib/components/theme-toggle'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -23,10 +22,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning={true}>
       <body className={inter.className}>
         <ThemeProvider attribute="class">
-          <Theme accentColor="jade">
-            {children}
-            <ThemeToogle />
-          </Theme>
+          <Theme accentColor="jade">{children}</Theme>
         </ThemeProvider>
       </body>
     </html>
