@@ -5,12 +5,17 @@ import { Box, Button, Container, Flex, Heading, Section, Text, TextField } from 
 import { Icon } from '@iconify/react'
 import { ChangeEvent, useState } from 'react'
 import { useTheme } from 'next-themes'
-// import Image from "next/image";
+import { generateUUID } from '@lib/helpers/generate-id'
 
 export default function Home() {
   const { theme } = useTheme()
   const [kode, setKode] = useState<string>('')
   const router = useRouter()
+
+  function gotoRoom() {
+    const hashId = generateUUID()
+    router.push('/room/' + hashId)
+  }
 
   return (
     <Box className=" h-screen w-full">
@@ -38,7 +43,7 @@ export default function Home() {
             variant="classic"
             size="3"
             className="cursor-pointer w-full sm:w-1/2 md:w-auto"
-            onClick={() => router.push('/setup')}
+            onClick={gotoRoom}
           >
             <Icon icon="mage:video-plus" width={20} height={20} />
             <Text as="div" size="3" className="text-center text-balance">

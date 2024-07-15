@@ -4,7 +4,7 @@ import { Inter } from 'next/font/google'
 import { Theme } from '@radix-ui/themes'
 import '@radix-ui/themes/styles.css'
 import '@lib/css/globals.css'
-import ThemeToogle from '@lib/components/ThemeToggle'
+import ThemeToogle from '@/app/_lib/components/theme-toggle'
 
 const inter = Inter({ subsets: ['latin'] })
 

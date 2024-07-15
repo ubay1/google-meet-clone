@@ -4,17 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useTheme } from 'next-themes'
 import { Icon } from '@iconify/react'
-import {
-  Box,
-  Button,
-  Dialog,
-  Flex,
-  Grid,
-  IconButton,
-  Select,
-  Text,
-  VisuallyHidden,
-} from '@radix-ui/themes'
+// prettier-ignore
+import { Box, Button, Dialog, Flex, Grid, IconButton, Select, Text, VisuallyHidden } from '@radix-ui/themes'
 import { checkPermission, isEmpty } from '@lib/helpers/checker'
 import { InputOutput, statusPermissions } from '@lib/types/permissions'
 import IconPermission from '@lib/components/icon-permission'
@@ -105,7 +96,7 @@ export default function App() {
   function setOnOffMicrophone(stream: any, status: 'on' | 'off') {
     if (status === 'on') {
       // console.log("stream on  = ", stream);
-      localAudio.current.srcObject = stream
+      // localAudio.current.srcObject = stream
       setMicrophoneActive(true)
     } else {
       const stream = localAudio.current.srcObject

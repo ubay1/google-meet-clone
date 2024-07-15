@@ -1,55 +1,65 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useTheme } from 'next-themes'
 import { Icon } from '@iconify/react'
-import {
-  Box,
-  Button,
-  Dialog,
-  Flex,
-  Grid,
-  IconButton,
-  Select,
-  Text,
-  VisuallyHidden,
-} from '@radix-ui/themes'
+// prettier-ignore
+import { Box, Button, Dialog, Flex, Grid, IconButton, Select, Text, TextField, VisuallyHidden } from '@radix-ui/themes'
 import { checkPermission, isEmpty } from '@lib/helpers/checker'
 import { InputOutput, statusPermissions } from '@lib/types/permissions'
 import IconPermission from '@lib/components/icon-permission'
 import { useRouter } from 'next/navigation'
-import { generateUUID } from '@lib/helpers/generate-id'
+import { useSetupStore, useUserStore } from '@lib/stores/join-room'
+import { StreamContext } from '@lib/context/stream'
 
-export default function App() {
+export default function SetupV2() {
+  const { ref1, ref2 } = useContext(StreamContext)
   const { theme } = useTheme()
   const router = useRouter()
 
-  const localVideo: any = useRef(null)
+  const { name, setName } = useUserStore()
+
+  const {
+    // localVideo,
+    // localVideoStream,
+    // localAudio,
+    // localAudioStream,
+    // setLocalVideoStream,
+    // setLocalAudioStream,
+    statusPermissionCamera,
+    statusPermissionMicrophone,
+    isCameraActive,
+    isMicrophoneActive,
+    openDialogPermissionCameraDenied,
+    openDialogPermissionMicrophoneDenied,
+    selectCameraType,
+    selectSpeakerType,
+    selectMicrophoneType,
+    listCameraType,
+    listMicrophoneType,
+    listSpeakerType,
+    setFinishSetup,
+    setOpenDialogPermissionCameraDenied,
+    setOpenDialogPermissionMicrophoneDenied,
+    setErrorMsg,
+    setCameraActive,
+    setMicrophoneActive,
+    setSpeakerType,
+    setMicrophoneType,
+    setCameraType,
+    setListMicrophoneType,
+    setListCameraType,
+    setListSpeakerType,
+    setStatusPermissionCamera,
+    setStatusPermissionMicrophone,
+  } = useSetupStore()
+
+  // const localVideo: any = useRef(null)
+  // const localAudio: any = useRef(null)
   let localVideoStream: any = null
-  const localAudio: any = useRef(null)
   let localAudioStream: any = null
-
-  const [statusPermissionCamera, setStatusPermissionCamera] =
-    useState<statusPermissions>('belum-aktif')
-  const [statusPermissionMicrophone, setStatusPermissionMicrophone] =
-    useState<statusPermissions>('belum-aktif')
-
-  const [errorMsg, setErrorMsg] = useState<string>('')
-  const [isCameraActive, setCameraActive] = useState<boolean>(false)
-  const [isMicrophoneActive, setMicrophoneActive] = useState<boolean>(false)
-  // akses permission camera & mic di tolak
-  const [openDialogPermissionCameraDenied, setOpenDialogPermissionCameraDenied] =
-    useState<boolean>(false)
-  const [openDialogPermissionMicrophoneDenied, setOpenDialogPermissionMicrophoneDenied] =
-    useState<boolean>(false)
-  // list mic, speaker, video
-  const [selectCameraType, setCameraType] = useState<InputOutput>()
-  const [selectMicrophoneType, setMicrophoneType] = useState<InputOutput>()
-  const [selectSpeakerType, setSpeakerType] = useState<InputOutput>()
-  const [listCamera, setListCamera] = useState<InputOutput[]>([])
-  const [listMicrophone, setListMicrophone] = useState<InputOutput[]>([])
-  const [listSpeaker, setListSpeaker] = useState<InputOutput[]>([])
 
   function handleErrorStream(error: { name: string }) {
     if (error.name === 'OverconstrainedError') {
@@ -69,16 +79,16 @@ export default function App() {
   function setOnOffCamera(stream: any, status: 'on' | 'off') {
     if (status === 'on') {
       // console.log("stream on  = ", stream);
-      localVideo.current.srcObject = stream
+      ref1.current.srcObject = stream
       setCameraActive(true)
     } else {
-      const stream = localVideo.current.srcObject
+      const stream = ref1.current.srcObject
       // console.log("stream off = ", stream);
       const tracks = stream.getTracks()
       tracks.forEach((track: any) => {
         track.stop()
       })
-      localVideo.current.srcObject = null
+      ref1.current.srcObject = null
       setCameraActive(false)
     }
   }
@@ -105,16 +115,16 @@ export default function App() {
   function setOnOffMicrophone(stream: any, status: 'on' | 'off') {
     if (status === 'on') {
       // console.log("stream on  = ", stream);
-      localAudio.current.srcObject = stream
+      ref2.current.srcObject = stream
       setMicrophoneActive(true)
     } else {
-      const stream = localAudio.current.srcObject
+      const stream = ref2.current.srcObject
       // console.log("stream off = ", stream);
       const tracks = stream.getTracks()
       tracks.forEach((track: any) => {
         track.stop()
       })
-      localAudio.current.srcObject = null
+      ref2.current.srcObject = null
       setMicrophoneActive(false)
     }
   }
@@ -154,7 +164,7 @@ export default function App() {
       localVideoElement.current
         .setSinkId(lastDeviceIdSpeaker)
         .then(() => {
-          // console.log("Success, audio output device attached: ", lastDeviceIdSpeaker);
+          console.log('Success, audio output device attached: ', lastDeviceIdSpeaker)
         })
         .catch((error: any) => {
           console.log('Error attaching audio output device: ', error)
@@ -166,28 +176,32 @@ export default function App() {
 
   function onChangeSpeaker(deviceId: string) {
     // console.log(deviceId);
-    const getTypeSpeaker = listSpeaker.filter((data: InputOutput) => data.deviceId === deviceId)[0]
+    const getTypeSpeaker = listSpeakerType.filter(
+      (data: InputOutput) => data.deviceId === deviceId,
+    )[0]
     console.log(getTypeSpeaker)
 
     setSpeakerType(getTypeSpeaker)
     const audioDestination = selectSpeakerType?.deviceId ?? ''
-    attachSinkId(localVideo, audioDestination)
+    attachSinkId(ref1, audioDestination)
   }
 
   // change microphone
   async function onChangeMicrophone(deviceId: string) {
     // console.log(deviceId);
-    const getTypeMic = listMicrophone.filter((data: InputOutput) => data.deviceId === deviceId)[0]
+    const getTypeMic = listMicrophoneType.filter(
+      (data: InputOutput) => data.deviceId === deviceId,
+    )[0]
     setMicrophoneType(getTypeMic)
     // cek state isMicrophoneActive
     if (isMicrophoneActive) {
-      const stream = localAudio.current.srcObject
+      const stream = ref2.current.srcObject
       // console.log("stream off = ", stream);
       const tracks = stream.getTracks()
       tracks.forEach((track: any) => {
         track.stop()
       })
-      localAudio.current.srcObject = null
+      ref2.current.srcObject = null
 
       const newStream = await navigator.mediaDevices.getUserMedia({
         audio: { deviceId: { exact: selectMicrophoneType?.deviceId } },
@@ -199,20 +213,20 @@ export default function App() {
     }
   }
 
-  // change microphone
+  // change camera
   async function onChangeCamera(deviceId: string) {
     // console.log(deviceId);
-    const getTypeCam = listCamera.filter((data: InputOutput) => data.deviceId === deviceId)[0]
+    const getTypeCam = listCameraType.filter((data: InputOutput) => data.deviceId === deviceId)[0]
     setCameraType(getTypeCam)
     // cek state isMicrophoneActive
     if (isCameraActive) {
-      const stream = localVideo.current.srcObject
+      const stream = ref1.current.srcObject
       // console.log("stream off = ", stream);
       const tracks = stream.getTracks()
       tracks.forEach((track: any) => {
         track.stop()
       })
-      localVideo.current.srcObject = null
+      ref1.current.srcObject = null
 
       const newStream = await navigator.mediaDevices.getUserMedia({
         video: { deviceId: { exact: selectMicrophoneType?.deviceId } },
@@ -233,25 +247,17 @@ export default function App() {
           if (device.deviceId === 'default') {
             setMicrophoneType({ deviceId: device.deviceId, label: device.label })
           }
-          setListMicrophone((allData) => [
-            ...allData,
-            { deviceId: device.deviceId, label: device.label },
-          ])
+          setListMicrophoneType({ deviceId: device.deviceId, label: device.label })
         } else if (device.kind === 'audiooutput' && !isEmpty(device.deviceId)) {
           if (device.deviceId === 'default') {
             setSpeakerType({ deviceId: device.deviceId, label: device.label })
           }
-          setListSpeaker((allData) => [
-            ...allData,
-            { deviceId: device.deviceId, label: device.label },
-          ])
+          setListSpeakerType({ deviceId: device.deviceId, label: device.label })
         } else if (device.kind === 'videoinput' && !isEmpty(device.deviceId)) {
           setCameraType({ deviceId: device.deviceId, label: device.label })
-          setListCamera((allData) => [
-            ...allData,
-            { deviceId: device.deviceId, label: device.label },
-          ])
+          setListCameraType({ deviceId: device.deviceId, label: device.label })
         }
+        7
       })
     } catch (error) {
       console.log('error list media = ', error)
@@ -261,22 +267,21 @@ export default function App() {
   const checkPermissions = async () => {
     try {
       const cameraPermission = await checkPermission('camera')
-      console.log('Camera permission:', cameraPermission)
+      // console.log('Camera permission:', cameraPermission)
       setStatusPermissionCamera(cameraPermission as statusPermissions)
 
       const microphonePermission = await checkPermission('microphone')
-      console.log('Microphone permission:', microphonePermission)
+      // console.log('Microphone permission:', microphonePermission)
       setStatusPermissionMicrophone(microphonePermission as statusPermissions)
     } catch (error) {
       console.error('Error checking permissions:', error)
     }
   }
 
-  function gotoRoom() {
-    const hashId = generateUUID()
-
-    router.push('/room/' + hashId)
+  function finishSetup() {
+    setFinishSetup(true)
   }
+
   // mounted
   useEffect(() => {
     // cek permission camera & microphone
@@ -286,10 +291,14 @@ export default function App() {
   }, [])
 
   return (
-    <Box className="h-screen w-full">
+    <Box
+      height={{ initial: '100%', sm: '100vh' }}
+      width={{ initial: '100%' }}
+      my={{ initial: '8', sm: '4' }}
+    >
       <Flex justify="center" direction="column" gap="4" px="4" align="center" height="100%">
         <Flex
-          gap={{ initial: '6', sm: '4' }}
+          gap={{ initial: '6', sm: '6' }}
           width={{ initial: '100%', sm: '80%', md: '80%' }}
           direction={{ initial: 'column', md: 'row' }}
           className=""
@@ -305,16 +314,16 @@ export default function App() {
               height={{ initial: '400px' }}
               className="relative rounded-lg bg-gray-800 text-white flex justify-center items-center"
             >
-              <audio ref={localAudio} hidden controls autoPlay playsInline></audio>
+              <audio ref={ref2} hidden controls autoPlay playsInline></audio>
               <video
-                ref={localVideo}
+                ref={ref1}
                 autoPlay
                 playsInline
                 className="h-[calc(100%+2px)] w-[calc(100%+2px)] object-cover aspect-video scale-x-[-1] rounded-lg"
               ></video>
 
               <Box className="absolute bottom-4 flex items-center flex-col gap-4">
-                {!isCameraActive && !isMicrophoneActive && (
+                {statusPermissionCamera !== 'aktif' || statusPermissionMicrophone !== 'aktif' ? (
                   <Button
                     variant="classic"
                     size="3"
@@ -324,6 +333,8 @@ export default function App() {
                   >
                     Allow camera & microphone
                   </Button>
+                ) : (
+                  <></>
                 )}
 
                 <Box className="flex items-center gap-4">
@@ -389,8 +400,8 @@ export default function App() {
                     </div>
                   </Select.Trigger>
                   <Select.Content position="popper">
-                    {listMicrophone.length > 0 &&
-                      listMicrophone.map((item: any, idx: number) => (
+                    {listMicrophoneType.length > 0 &&
+                      listMicrophoneType.map((item: any, idx: number) => (
                         <Select.Item key={`${item.deviceId}-${idx}`} value={item.deviceId}>
                           {item.label}
                         </Select.Item>
@@ -420,8 +431,8 @@ export default function App() {
                     </div>
                   </Select.Trigger>
                   <Select.Content position="popper">
-                    {listSpeaker.length > 0 &&
-                      listSpeaker.map((item: any, idx: number) => (
+                    {listSpeakerType.length > 0 &&
+                      listSpeakerType.map((item: any, idx: number) => (
                         <Select.Item key={`${item.deviceId}-${idx}`} value={item.deviceId}>
                           {item.label}
                         </Select.Item>
@@ -449,8 +460,8 @@ export default function App() {
                     </div>
                   </Select.Trigger>
                   <Select.Content position="popper">
-                    {listCamera.length > 0 &&
-                      listCamera.map((item: any, idx: number) => (
+                    {listCameraType.length > 0 &&
+                      listCameraType.map((item: any, idx: number) => (
                         <Select.Item key={`${item.deviceId}-${idx}`} value={item.deviceId}>
                           {item.label}
                         </Select.Item>
@@ -459,7 +470,19 @@ export default function App() {
                 </Select.Root>
               </Grid>
             </Box>
+
+            <TextField.Root
+              placeholder="Masukkan nama"
+              size="3"
+              value={name || ''}
+              onChange={(e) => setName(e.target.value)}
+            >
+              <TextField.Slot>
+                <Icon icon="flowbite:profile-card-solid" width={20} height={20} />
+              </TextField.Slot>
+            </TextField.Root>
           </Flex>
+
           <Box
             width={{ initial: '100%', md: '30%' }}
             className="flex flex-col justify-center items-center gap-4"
@@ -472,7 +495,8 @@ export default function App() {
               size="3"
               radius="full"
               className="cursor-pointer disabled:cursor-not-allowed w-auto"
-              onClick={gotoRoom}
+              disabled={isEmpty(name)}
+              onClick={finishSetup}
             >
               Gabung sekarang
             </Button>

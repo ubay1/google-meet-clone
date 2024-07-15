@@ -3,16 +3,16 @@ export const checkPermission = async (permissionName: 'camera' | 'microphone'): 
     const permissionStatus = await navigator.permissions.query({
       name: permissionName as PermissionName,
     })
-    console.log(`Status izin ${permissionName}:`, permissionStatus.state)
+    // console.log(`Status izin ${permissionName}:`, permissionStatus.state)
 
     if (permissionStatus.state === 'granted') {
-      console.log(`Izin ${permissionName} aktif.`)
+      // console.log(`Izin ${permissionName} aktif.`)
       return 'aktif'
     } else if (permissionStatus.state === 'denied') {
-      console.log(`Izin ${permissionName} ditolak.`)
+      // console.log(`Izin ${permissionName} ditolak.`)
       return 'ditolak'
     } else {
-      console.log(`Izin ${permissionName} belum diberikan.`)
+      // console.log(`Izin ${permissionName} belum diberikan.`)
       return 'belum-aktif'
     }
   } catch (error) {
