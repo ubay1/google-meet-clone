@@ -6,12 +6,13 @@ const SimplePeerContext = createContext(null as any)
 export const useSimplePeer = () => useContext(SimplePeerContext)
 
 export const SimplePeerProvider = ({ children }: { children: ReactNode }) => {
-  const [peer, setPeer] = useState<any>()
+  const [peerBase, setpeerBase] = useState<any>()
+
   useEffect(() => {
     const aa = new Peer({ initiator: true })
-    setPeer(aa)
+    setpeerBase(aa)
   }, [])
   // console.log(peer)
 
-  return <SimplePeerContext.Provider value={{ peer }}>{children}</SimplePeerContext.Provider>
+  return <SimplePeerContext.Provider value={{ peerBase }}>{children}</SimplePeerContext.Provider>
 }

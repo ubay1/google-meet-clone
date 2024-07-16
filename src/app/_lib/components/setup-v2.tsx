@@ -13,7 +13,7 @@ import IconPermission from '@lib/components/icon-permission'
 import { useRouter } from 'next/navigation'
 import { usePeerStore, useSetupStore, useUserStore } from '@lib/stores/join-room'
 import { StreamContext } from '@lib/context/stream'
-import { usePeer } from '@lib/context/peer'
+import { SimplePeerProvider, useSimplePeer } from '@lib/context/simple-peer'
 // import Peer from 'peerjs'
 import SimplePeer from 'simple-peer'
 
@@ -21,13 +21,8 @@ const SetupV2: FC<{ params: string }> = ({ params }) => {
   const { ref1, ref2 } = useContext(StreamContext)
   const { theme } = useTheme()
   const { roomName, name, setRoomName, setName } = useUserStore()
-  const { id, conn, setId, setPeer, setRemoteStream, setCall } = usePeerStore()
-  const { connectToPeer, startCall } = usePeer()
 
-  const handleConnect = (ids: string) => connectToPeer(ids)
-  const handleCall = () => {
-    startCall(id, ref1.current.srcObject)
-  }
+  const { peerBase } = useSimplePeer()
 
   const {
     // localVideo,
@@ -87,25 +82,6 @@ const SetupV2: FC<{ params: string }> = ({ params }) => {
       )
     }
     // setErrorMsg(`getUserMedia error: ${error.name}`, error);
-  }
-
-  function setOnOffAllMedia(stream: any) {
-    // console.log("stream on  = ", stream);
-    ref1.current.srcObject = stream
-    setCameraActive(true)
-    setMicrophoneActive(true)
-  }
-  async function setAllMediaStream() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { deviceId: { exact: selectCameraType?.deviceId } },
-        audio: { deviceId: { exact: selectMicrophoneType?.deviceId } },
-      })
-      myStreams = stream
-      setOnOffAllMedia(myStreams)
-    } catch (error: any) {
-      handleErrorStream(error)
-    }
   }
 
   function setOnOffCamera(stream: any, status: 'on' | 'off') {
@@ -245,25 +221,6 @@ const SetupV2: FC<{ params: string }> = ({ params }) => {
     }
   }
 
-  function addMedia(stream: MediaStream) {
-    console.log('addmedia = ', stream)
-    peer1.addStream(stream) // <- add streams to peer dynamically
-  }
-  async function onChangeMicrophoneV2(deviceId: string) {
-    const getTypeMic = listMicrophoneType.filter(
-      (data: InputOutput) => data.deviceId === deviceId,
-    )[0]
-    setMicrophoneType(getTypeMic)
-
-    // then, anytime later...
-    navigator.mediaDevices
-      .getUserMedia({
-        video: { deviceId: { exact: selectCameraType?.deviceId } },
-        audio: { deviceId: { exact: selectMicrophoneType?.deviceId } },
-      })
-      .then(addMedia)
-      .catch(() => {})
-  }
   // change camera
   async function onChangeCamera(deviceId: string) {
     // console.log(deviceId);
@@ -331,7 +288,6 @@ const SetupV2: FC<{ params: string }> = ({ params }) => {
 
   function onConnect() {
     setAllMediaStream()
-    handleConnect(roomName)
   }
   function finishSetup() {
     // if (ref1.current.srcObject) {
@@ -352,7 +308,6 @@ const SetupV2: FC<{ params: string }> = ({ params }) => {
     //   })
     //   ref2.current.srcObject = null
     // }
-    handleCall()
     setFinishSetup(true)
   }
 
@@ -360,24 +315,25 @@ const SetupV2: FC<{ params: string }> = ({ params }) => {
     setFinishSetup(true)
   }
 
-  useEffect(() => {
-    peer1 = new SimplePeer({ initiator: true }) // you don't need streams here
-    peer2 = new SimplePeer()
-    // setAllMediaStream()
-    getListAllMediaStream()
-
-    peer1.on('signal', (data: any) => {
-      peer2.signal(data)
-    })
-
-    peer2.on('signal', (data: any) => {
-      peer1.signal(data)
-    })
-
-    peer2.on('stream', (stream: any) => {
-      // got remote video stream, now let's show it in a video tag
+  async function setAllMediaStream() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: { exact: selectCameraType?.deviceId } },
+        audio: { deviceId: { exact: selectMicrophoneType?.deviceId } },
+      })
       ref1.current.srcObject = stream
-    })
+      setCameraActive(true)
+      setMicrophoneActive(true)
+    } catch (error: any) {
+      handleErrorStream(error)
+    }
+  }
+
+  async function onChangeMicrophoneV2(deviceId: string) {
+    const getTypeMic = listMicrophoneType.filter(
+      (data: InputOutput) => data.deviceId === deviceId,
+    )[0]
+    setMicrophoneType(getTypeMic)
 
     // then, anytime later...
     navigator.mediaDevices
@@ -387,11 +343,58 @@ const SetupV2: FC<{ params: string }> = ({ params }) => {
       })
       .then(addMedia)
       .catch(() => {})
-  }, [])
+  }
+
+  function addMedia(stream: MediaStream) {
+    console.log('addmedia = ', stream)
+    peer1.addStream(stream) // <- add streams to peer dynamically
+  }
+
+  useEffect(() => {
+    if (peerBase) {
+      console.log('peerBase in setup = ', peerBase)
+
+      peer1 = peerBase
+      peer2 = new SimplePeer() // peer untuk user
+
+      setAllMediaStream()
+      getListAllMediaStream()
+
+      peer1.on('signal', (data: any) => {
+        peer2.signal(data)
+      })
+
+      // ini untuk connect ke peer1
+      peer2.on('signal', (data: any) => {
+        peer1.signal(data)
+      })
+
+      // ini tidak bekerja, jika peer1 dan peer2 tidak connect
+      peer1.on('connect', () => {
+        peer1.send('hey peer2, how is it going?')
+      })
+      peer2.on('data', (data: any) => {
+        console.log('got a message from peer1: ' + data)
+      })
+
+      // show video and audio
+      peer2.on('stream', (stream: any) => {
+        // got remote video stream, now let's show it in a video tag
+        ref1.current.srcObject = stream
+      })
+
+      // then, anytime later...
+      // navigator.mediaDevices
+      //   .getUserMedia({
+      //     video: { deviceId: { exact: selectCameraType?.deviceId } },
+      //     audio: { deviceId: { exact: selectMicrophoneType?.deviceId } },
+      //   })
+      //   .then(addMedia)
+      //   .catch(() => {})
+    }
+  }, [peerBase])
 
   // useEffect(() => {
-  //   const peer2 = new SimplePeer()
-
   //   const peer = new Peer(params)
   //   peer.on('open', (id) => {
   //     setId(id)
@@ -413,6 +416,7 @@ const SetupV2: FC<{ params: string }> = ({ params }) => {
   // }, [])
 
   // mounted
+
   useEffect(() => {
     // cek permission camera & microphone
     checkPermissions()

@@ -14,12 +14,18 @@ const Content = () => {
   const { theme } = useTheme()
   const router = useRouter()
 
+  const { peerBase } = useSimplePeer()
+
   const [kode, setKode] = useState<string>('')
 
   function gotoRoom() {
     const id = generateUUID()
     router.push('/room/' + id)
   }
+
+  useEffect(() => {
+    console.log('peerBase in home = ', peerBase)
+  }, [peerBase])
 
   return (
     <Box className=" h-screen w-full">
@@ -51,7 +57,7 @@ const Content = () => {
           >
             <Icon icon="mage:video-plus" width={20} height={20} />
             <Text as="div" size="3" className="text-center text-balance">
-              Mulai meet
+              Mulai instant meet
             </Text>
           </Button>
           <Flex
