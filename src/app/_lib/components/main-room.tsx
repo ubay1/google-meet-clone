@@ -6,6 +6,7 @@ import { StreamContext } from '@lib/context/stream'
 import { useSetupStore, useUserStore } from '@lib/stores/join-room'
 import { Icon } from '@iconify/react'
 import Clock from './Clock'
+import SimplePeer from 'simple-peer'
 
 interface IProps {
   params: string
@@ -155,35 +156,35 @@ const MainRoom: FC<IProps> = ({ params }) => {
   //   }
   // }, [])
 
-  useEffect(() => {
-    if (ref1 && isCameraActive) {
-      navigator.mediaDevices
-        .getUserMedia({
-          video: { deviceId: { exact: selectCameraType?.deviceId } },
-          audio: { deviceId: { exact: selectMicrophoneType?.deviceId } },
-        })
-        .then((stream) => {
-          ref1.current.srcObject = stream
-          setCameraActive(true)
-          setMicrophoneActive(true)
-        })
-    }
-  }, [])
+  // useEffect(() => {
+  //   if (ref1 && isCameraActive) {
+  //     navigator.mediaDevices
+  //       .getUserMedia({
+  //         video: { deviceId: { exact: selectCameraType?.deviceId } },
+  //         audio: { deviceId: { exact: selectMicrophoneType?.deviceId } },
+  //       })
+  //       .then((stream) => {
+  //         ref1.current.srcObject = stream
+  //         setCameraActive(true)
+  //         setMicrophoneActive(true)
+  //       })
+  //   }
+  // }, [])
 
-  useEffect(() => {
-    const peer = new Peer(params)
+  // useEffect(() => {
+  //   const peer = new Peer(params)
 
-    peer.on('call', (call) => {
-      console.log('call = ', call)
+  //   peer.on('call', (call) => {
+  //     console.log('call = ', call)
 
-      call.answer(ref1.current.srcObject)
-      call.on('stream', (remoteStream: any) => {
-        console.log('remoteStream - ', remoteStream)
-        remoteVideoRef.current.srcObject = remoteStream
-        setRemoteStream(remoteStream)
-      })
-    })
-  }, [])
+  //     call.answer(ref1.current.srcObject)
+  //     call.on('stream', (remoteStream: any) => {
+  //       console.log('remoteStream - ', remoteStream)
+  //       remoteVideoRef.current.srcObject = remoteStream
+  //       setRemoteStream(remoteStream)
+  //     })
+  //   })
+  // }, [])
 
   // useEffect(() => {
   // const peer = new Peer()
@@ -208,6 +209,40 @@ const MainRoom: FC<IProps> = ({ params }) => {
   //     remoteVideoRef.current.srcObject = remoteStream
   //   }
   // }, [remoteStream])
+
+  let peer1: any
+  let peer2: any
+  function addMedia(stream: MediaStream) {
+    console.log('addmedia = ', stream)
+    peer1.addStream(stream) // <- add streams to peer dynamically
+  }
+
+  useEffect(() => {
+    peer1 = new SimplePeer({ initiator: true }) // you don't need streams here
+    peer2 = new SimplePeer()
+
+    peer1.on('signal', (data: any) => {
+      peer2.signal(data)
+    })
+
+    peer2.on('signal', (data: any) => {
+      peer1.signal(data)
+    })
+
+    peer2.on('stream', (stream: any) => {
+      // got remote video stream, now let's show it in a video tag
+      ref1.current.srcObject = stream
+    })
+
+    // then, anytime later...
+    navigator.mediaDevices
+      .getUserMedia({
+        video: { deviceId: { exact: selectCameraType?.deviceId } },
+        audio: { deviceId: { exact: selectMicrophoneType?.deviceId } },
+      })
+      .then(addMedia)
+      .catch(() => {})
+  }, [])
 
   return (
     <Box className="h-screen w-full">

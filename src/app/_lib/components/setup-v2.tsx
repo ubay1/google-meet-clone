@@ -14,7 +14,8 @@ import { useRouter } from 'next/navigation'
 import { usePeerStore, useSetupStore, useUserStore } from '@lib/stores/join-room'
 import { StreamContext } from '@lib/context/stream'
 import { usePeer } from '@lib/context/peer'
-import Peer from 'peerjs'
+// import Peer from 'peerjs'
+import SimplePeer from 'simple-peer'
 
 const SetupV2: FC<{ params: string }> = ({ params }) => {
   const { ref1, ref2 } = useContext(StreamContext)
@@ -69,6 +70,9 @@ const SetupV2: FC<{ params: string }> = ({ params }) => {
   let localAudioStream: any = null
 
   let myStreams: any = null
+
+  let peer1: any
+  let peer2: any
 
   function handleErrorStream(error: { name: string }) {
     if (error.name === 'OverconstrainedError') {
@@ -241,6 +245,25 @@ const SetupV2: FC<{ params: string }> = ({ params }) => {
     }
   }
 
+  function addMedia(stream: MediaStream) {
+    console.log('addmedia = ', stream)
+    peer1.addStream(stream) // <- add streams to peer dynamically
+  }
+  async function onChangeMicrophoneV2(deviceId: string) {
+    const getTypeMic = listMicrophoneType.filter(
+      (data: InputOutput) => data.deviceId === deviceId,
+    )[0]
+    setMicrophoneType(getTypeMic)
+
+    // then, anytime later...
+    navigator.mediaDevices
+      .getUserMedia({
+        video: { deviceId: { exact: selectCameraType?.deviceId } },
+        audio: { deviceId: { exact: selectMicrophoneType?.deviceId } },
+      })
+      .then(addMedia)
+      .catch(() => {})
+  }
   // change camera
   async function onChangeCamera(deviceId: string) {
     // console.log(deviceId);
@@ -333,34 +356,66 @@ const SetupV2: FC<{ params: string }> = ({ params }) => {
     setFinishSetup(true)
   }
 
+  function finishSetupV2() {
+    setFinishSetup(true)
+  }
+
   useEffect(() => {
-    const peer = new Peer(params)
-    peer.on('open', (id) => {
-      setId(id)
-      console.log('My peer ID is: ' + id)
-      setAllMediaStream()
-      getListAllMediaStream()
-      handleConnect(id)
+    peer1 = new SimplePeer({ initiator: true }) // you don't need streams here
+    peer2 = new SimplePeer()
+    // setAllMediaStream()
+    getListAllMediaStream()
+
+    peer1.on('signal', (data: any) => {
+      peer2.signal(data)
     })
 
-    peer.on('connection', (conn) => {
-      setTimeout(() => {
-        conn.send('yeayy connected')
-      }, 1000)
+    peer2.on('signal', (data: any) => {
+      peer1.signal(data)
     })
 
-    setPeer(peer)
+    peer2.on('stream', (stream: any) => {
+      // got remote video stream, now let's show it in a video tag
+      ref1.current.srcObject = stream
+    })
 
-    return () => peer.destroy()
+    // then, anytime later...
+    navigator.mediaDevices
+      .getUserMedia({
+        video: { deviceId: { exact: selectCameraType?.deviceId } },
+        audio: { deviceId: { exact: selectMicrophoneType?.deviceId } },
+      })
+      .then(addMedia)
+      .catch(() => {})
   }, [])
+
+  // useEffect(() => {
+  //   const peer2 = new SimplePeer()
+
+  //   const peer = new Peer(params)
+  //   peer.on('open', (id) => {
+  //     setId(id)
+  //     console.log('My peer ID is: ' + id)
+  //     setAllMediaStream()
+  //     getListAllMediaStream()
+  //     handleConnect(id)
+  //   })
+
+  //   peer.on('connection', (conn) => {
+  //     setTimeout(() => {
+  //       conn.send('yeayy connected')
+  //     }, 1000)
+  //   })
+
+  //   setPeer(peer)
+
+  //   return () => peer.destroy()
+  // }, [])
 
   // mounted
   useEffect(() => {
     // cek permission camera & microphone
     checkPermissions()
-    // get list mic, speaker, camera
-    // getListAllMediaStream()
-
     setRoomName(params)
   }, [])
 
@@ -458,7 +513,7 @@ const SetupV2: FC<{ params: string }> = ({ params }) => {
                   defaultValue="default"
                   value={selectMicrophoneType?.deviceId}
                   disabled={statusPermissionMicrophone !== 'aktif'}
-                  onValueChange={onChangeMicrophone}
+                  onValueChange={onChangeMicrophoneV2}
                 >
                   <Select.Trigger
                     variant="classic"
@@ -585,7 +640,7 @@ const SetupV2: FC<{ params: string }> = ({ params }) => {
               Siap untuk bergabung?
             </Text>
             <Flex gap="4">
-              <Button
+              {/* <Button
                 variant="classic"
                 size="3"
                 color="amber"
@@ -595,14 +650,14 @@ const SetupV2: FC<{ params: string }> = ({ params }) => {
                 onClick={onConnect}
               >
                 Konek
-              </Button>
+              </Button> */}
               <Button
                 variant="classic"
                 size="3"
                 radius="full"
                 className="cursor-pointer disabled:cursor-not-allowed w-auto"
-                disabled={isEmpty(name) || isEmpty(roomName) || isEmpty(id) || !conn}
-                onClick={finishSetup}
+                disabled={isEmpty(name)}
+                onClick={finishSetupV2}
               >
                 Gabung sekarang
               </Button>

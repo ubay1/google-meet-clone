@@ -3,11 +3,12 @@
 import { useRouter } from 'next/navigation'
 import { Box, Button, Flex, Heading, Text, TextField } from '@radix-ui/themes'
 import { Icon } from '@iconify/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
 import { generateUUID } from '@lib/helpers/generate-id'
 import ThemeToogle from '@lib/components/theme-toggle'
-import { PeerProvider } from '@lib/context/peer'
+import Peer from 'simple-peer'
+import { SimplePeerProvider, useSimplePeer } from '@lib/context/simple-peer'
 
 const Content = () => {
   const { theme } = useTheme()
@@ -87,9 +88,9 @@ const Content = () => {
 
 export default function Home() {
   return (
-    <>
+    <SimplePeerProvider>
       <Content />
       <ThemeToogle />
-    </>
+    </SimplePeerProvider>
   )
 }
