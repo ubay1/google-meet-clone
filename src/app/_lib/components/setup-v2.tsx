@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
-import { useContext, useEffect, useRef, useState } from 'react'
+import { ChangeEvent, FC, useContext, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useTheme } from 'next-themes'
 import { Icon } from '@iconify/react'
@@ -11,15 +11,22 @@ import { checkPermission, isEmpty } from '@lib/helpers/checker'
 import { InputOutput, statusPermissions } from '@lib/types/permissions'
 import IconPermission from '@lib/components/icon-permission'
 import { useRouter } from 'next/navigation'
-import { useSetupStore, useUserStore } from '@lib/stores/join-room'
+import { usePeerStore, useSetupStore, useUserStore } from '@lib/stores/join-room'
 import { StreamContext } from '@lib/context/stream'
+import { usePeer } from '@lib/context/peer'
+import Peer from 'peerjs'
 
-export default function SetupV2() {
+const SetupV2: FC<{ params: string }> = ({ params }) => {
   const { ref1, ref2 } = useContext(StreamContext)
   const { theme } = useTheme()
-  const router = useRouter()
-
   const { roomName, name, setRoomName, setName } = useUserStore()
+  const { id, conn, setId, setPeer, setRemoteStream, setCall } = usePeerStore()
+  const { connectToPeer, startCall } = usePeer()
+
+  const handleConnect = (ids: string) => connectToPeer(ids)
+  const handleCall = () => {
+    startCall(id, ref1.current.srcObject)
+  }
 
   const {
     // localVideo,
@@ -61,6 +68,8 @@ export default function SetupV2() {
   let localVideoStream: any = null
   let localAudioStream: any = null
 
+  let myStreams: any = null
+
   function handleErrorStream(error: { name: string }) {
     if (error.name === 'OverconstrainedError') {
       setErrorMsg(
@@ -74,6 +83,25 @@ export default function SetupV2() {
       )
     }
     // setErrorMsg(`getUserMedia error: ${error.name}`, error);
+  }
+
+  function setOnOffAllMedia(stream: any) {
+    // console.log("stream on  = ", stream);
+    ref1.current.srcObject = stream
+    setCameraActive(true)
+    setMicrophoneActive(true)
+  }
+  async function setAllMediaStream() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: { exact: selectCameraType?.deviceId } },
+        audio: { deviceId: { exact: selectMicrophoneType?.deviceId } },
+      })
+      myStreams = stream
+      setOnOffAllMedia(myStreams)
+    } catch (error: any) {
+      handleErrorStream(error)
+    }
   }
 
   function setOnOffCamera(stream: any, status: 'on' | 'off') {
@@ -278,34 +306,62 @@ export default function SetupV2() {
     }
   }
 
+  function onConnect() {
+    setAllMediaStream()
+    handleConnect(roomName)
+  }
   function finishSetup() {
-    if (ref1.current.srcObject) {
-      const stream = ref1.current.srcObject
-      // console.log("stream off = ", stream);
-      const tracks = stream.getTracks()
-      tracks.forEach((track: any) => {
-        track.stop()
-      })
-      ref1.current.srcObject = null
-    }
-    if (ref2.current.srcObject) {
-      const stream = ref2.current.srcObject
-      // console.log("stream off = ", stream);
-      const tracks = stream.getTracks()
-      tracks.forEach((track: any) => {
-        track.stop()
-      })
-      ref2.current.srcObject = null
-    }
+    // if (ref1.current.srcObject) {
+    //   const stream = ref1.current.srcObject
+    //   // console.log("stream off = ", stream);
+    //   const tracks = stream.getTracks()
+    //   tracks.forEach((track: any) => {
+    //     track.stop()
+    //   })
+    //   ref1.current.srcObject = null
+    // }
+    // if (ref2.current.srcObject) {
+    //   const stream = ref2.current.srcObject
+    //   // console.log("stream off = ", stream);
+    //   const tracks = stream.getTracks()
+    //   tracks.forEach((track: any) => {
+    //     track.stop()
+    //   })
+    //   ref2.current.srcObject = null
+    // }
+    handleCall()
     setFinishSetup(true)
   }
+
+  useEffect(() => {
+    const peer = new Peer(params)
+    peer.on('open', (id) => {
+      setId(id)
+      console.log('My peer ID is: ' + id)
+      setAllMediaStream()
+      getListAllMediaStream()
+      handleConnect(id)
+    })
+
+    peer.on('connection', (conn) => {
+      setTimeout(() => {
+        conn.send('yeayy connected')
+      }, 1000)
+    })
+
+    setPeer(peer)
+
+    return () => peer.destroy()
+  }, [])
 
   // mounted
   useEffect(() => {
     // cek permission camera & microphone
     checkPermissions()
     // get list mic, speaker, camera
-    getListAllMediaStream()
+    // getListAllMediaStream()
+
+    setRoomName(params)
   }, [])
 
   return (
@@ -332,7 +388,7 @@ export default function SetupV2() {
               height={{ initial: '400px' }}
               className="relative rounded-lg bg-gray-800 text-white flex justify-center items-center"
             >
-              <audio ref={ref2} hidden controls autoPlay playsInline></audio>
+              {/* <audio ref={ref2} hidden controls autoPlay playsInline></audio> */}
               <video
                 ref={ref1}
                 autoPlay
@@ -340,8 +396,11 @@ export default function SetupV2() {
                 className="h-[calc(100%+2px)] w-[calc(100%+2px)] object-cover aspect-video scale-x-[-1] rounded-lg"
               ></video>
 
-              <Box className="absolute bottom-4 flex items-center flex-col gap-4">
-                {statusPermissionCamera !== 'aktif' || statusPermissionMicrophone !== 'aktif' ? (
+              {/* <Box className="absolute bottom-4 flex items-center flex-col gap-4">
+                {(statusPermissionCamera !== 'aktif' && !isCameraActive && !isMicrophoneActive) ||
+                (statusPermissionMicrophone !== 'aktif' &&
+                  !isCameraActive &&
+                  !isMicrophoneActive) ? (
                   <Button
                     variant="classic"
                     size="3"
@@ -390,7 +449,7 @@ export default function SetupV2() {
                     </IconButton>
                   </Box>
                 </Box>
-              </Box>
+              </Box> */}
             </Box>
             {/* list mic,speaker,cam */}
             <Box>
@@ -490,12 +549,12 @@ export default function SetupV2() {
             </Box>
 
             <Flex direction={{ initial: 'column', sm: 'row' }} gap="4">
-              <Box width={{ initial: '100%', sm: '50%' }}>
+              <Box width={{ initial: '100%', sm: '50%' }} className="opacity-60">
                 <TextField.Root
                   placeholder="Masukkan nama room"
                   size="3"
+                  disabled
                   value={roomName || ''}
-                  onChange={(e) => setRoomName(e.target.value)}
                 >
                   <TextField.Slot>
                     <Icon icon="majesticons:door-enter" width={20} height={20} />
@@ -525,16 +584,29 @@ export default function SetupV2() {
             <Text size="6" align="center" wrap="balance">
               Siap untuk bergabung?
             </Text>
-            <Button
-              variant="classic"
-              size="3"
-              radius="full"
-              className="cursor-pointer disabled:cursor-not-allowed w-auto"
-              disabled={isEmpty(name) || isEmpty(roomName)}
-              onClick={finishSetup}
-            >
-              Gabung sekarang
-            </Button>
+            <Flex gap="4">
+              <Button
+                variant="classic"
+                size="3"
+                color="amber"
+                radius="full"
+                className="cursor-pointer disabled:cursor-not-allowed w-auto"
+                disabled={conn}
+                onClick={onConnect}
+              >
+                Konek
+              </Button>
+              <Button
+                variant="classic"
+                size="3"
+                radius="full"
+                className="cursor-pointer disabled:cursor-not-allowed w-auto"
+                disabled={isEmpty(name) || isEmpty(roomName) || isEmpty(id) || !conn}
+                onClick={finishSetup}
+              >
+                Gabung sekarang
+              </Button>
+            </Flex>
           </Box>
         </Flex>
       </Flex>
@@ -603,3 +675,5 @@ export default function SetupV2() {
     </Box>
   )
 }
+
+export default SetupV2

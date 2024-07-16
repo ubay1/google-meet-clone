@@ -11,13 +11,12 @@ interface IProps {
   params: string
 }
 
-const MainRoom: FC<IProps> = () => {
+const MainRoom: FC<IProps> = ({ params }) => {
   const { ref1, ref2 } = useContext(StreamContext)
   // peer to peer
   const [peerId, setPeerId] = useState('')
   const [remotePeerId, setRemotePeerId] = useState('')
   const [remoteStream, setRemoteStream] = useState()
-  const peerInstance: any = useRef()
   const localVideoRef: any = useRef()
   const remoteVideoRef: any = useRef()
 
@@ -132,53 +131,83 @@ const MainRoom: FC<IProps> = () => {
     startMicrophone()
   }
 
+  // useEffect(() => {
+  //   if (ref1 && isCameraActive) {
+  //     navigator.mediaDevices
+  //       .getUserMedia({
+  //         video: { deviceId: { exact: selectCameraType?.deviceId } },
+  //       })
+  //       .then((res) => {
+  //         localVideoStream = res
+  //         setOnOffCamera(localVideoStream, 'on')
+  //       })
+  //   }
+
+  //   if (ref2 && isMicrophoneActive) {
+  //     navigator.mediaDevices
+  //       .getUserMedia({
+  //         audio: { deviceId: { exact: selectMicrophoneType?.deviceId } },
+  //       })
+  //       .then((res) => {
+  //         localAudioStream = res
+  //         setOnOffMicrophone(localAudioStream, 'on')
+  //       })
+  //   }
+  // }, [])
+
   useEffect(() => {
     if (ref1 && isCameraActive) {
       navigator.mediaDevices
         .getUserMedia({
           video: { deviceId: { exact: selectCameraType?.deviceId } },
-        })
-        .then((res) => {
-          localVideoStream = res
-          setOnOffCamera(localVideoStream, 'on')
-        })
-    }
-
-    if (ref2 && isMicrophoneActive) {
-      navigator.mediaDevices
-        .getUserMedia({
           audio: { deviceId: { exact: selectMicrophoneType?.deviceId } },
         })
-        .then((res) => {
-          localAudioStream = res
-          setOnOffMicrophone(localAudioStream, 'on')
+        .then((stream) => {
+          ref1.current.srcObject = stream
+          setCameraActive(true)
+          setMicrophoneActive(true)
         })
     }
   }, [])
 
   useEffect(() => {
-    const peer = new Peer()
-    // Initialize PeerJS
-    peer.on('open', (id) => {
-      setPeerId(id)
-    })
+    const peer = new Peer(params)
+
     peer.on('call', (call) => {
-      navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
-        localVideoRef.current.srcObject = stream
-        call.answer(stream) // Answer the call with the local stream
-        call.on('stream', (remoteStream: any) => {
-          setRemoteStream(remoteStream)
-        })
+      console.log('call = ', call)
+
+      call.answer(ref1.current.srcObject)
+      call.on('stream', (remoteStream: any) => {
+        console.log('remoteStream - ', remoteStream)
+        remoteVideoRef.current.srcObject = remoteStream
+        setRemoteStream(remoteStream)
       })
     })
-    peerInstance.current = peer
   }, [])
 
-  useEffect(() => {
-    if (remoteVideoRef.current && remoteStream) {
-      remoteVideoRef.current.srcObject = remoteStream
-    }
-  }, [remoteStream])
+  // useEffect(() => {
+  // const peer = new Peer()
+  // // Initialize PeerJS
+  // peer.on('open', (id) => {
+  //   setPeerId(id)
+  // })
+  // peer.on('call', (call) => {
+  //   navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+  //     localVideoRef.current.srcObject = stream
+  //     call.answer(stream) // Answer the call with the local stream
+  //     call.on('stream', (remoteStream: any) => {
+  //       setRemoteStream(remoteStream)
+  //     })
+  //   })
+  // })
+  // peerInstance.current = peer
+  // }, [])
+
+  // useEffect(() => {
+  //   if (remoteVideoRef.current && remoteStream) {
+  //     remoteVideoRef.current.srcObject = remoteStream
+  //   }
+  // }, [remoteStream])
 
   return (
     <Box className="h-screen w-full">
@@ -199,7 +228,6 @@ const MainRoom: FC<IProps> = () => {
                 <Avatar fallback={name.slice(0, 1)} size="8" radius="full" variant="solid" />
               </Flex>
             )}
-            <audio ref={ref2} hidden controls autoPlay playsInline></audio>
             <video
               ref={ref1}
               autoPlay
@@ -214,8 +242,8 @@ const MainRoom: FC<IProps> = () => {
       </Flex>
 
       <Box className="fixed bottom-0 w-full h-20 bg-gray-800 px-4">
-        <Grid columns="3" height="100%">
-          <Flex justify="start" align="center" gap="2">
+        <Grid columns="3" height="100%" className="grid-cols-1 sm:grid-cols-3">
+          <Flex justify="start" align="center" gap="2" className="hidden sm:flex">
             <Clock />
             <Separator orientation="vertical" className="bg-white" />
             <Text size="4" truncate>
@@ -283,7 +311,7 @@ const MainRoom: FC<IProps> = () => {
             </Box>
           </Flex>
 
-          <Flex justify="end" align="center" gap="2">
+          <Flex justify="end" align="center" gap="2" className="hidden sm:flex">
             <Box className="flex items-center gap-4">
               <IconButton
                 variant="ghost"

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import { InputOutput, statusPermissions } from '../types/permissions'
+import { InputOutput, statusPermissions } from '@lib/types/permissions'
 
 interface UserState {
   roomName: string
@@ -104,5 +104,43 @@ export const useSetupStore = create<SetupState>()(
         set((state) => ({ listSpeakerType: [...state.listSpeakerType, data] })),
     }),
     { name: 'setup-storage' },
+  ),
+)
+
+interface PeerState {
+  peer: any
+  conn: any
+  call: any
+  myStream: any
+  remoteStream: any
+  id: any
+  connectedPeers: string[]
+  setPeer: (value: any) => void
+  setConn: (value: any) => void
+  setCall: (value: any) => void
+  setMyStream: (value: any) => void
+  setRemoteStream: (value: any) => void
+  setId: (value: any) => void
+  setConnectedPeers: (value: any) => void
+}
+export const usePeerStore = create<PeerState>()(
+  devtools(
+    (set) => ({
+      peer: null,
+      conn: null,
+      call: null,
+      myStream: null,
+      remoteStream: null,
+      id: null,
+      connectedPeers: [],
+      setPeer: (value: any) => set(() => ({ peer: value })),
+      setConn: (value: any) => set(() => ({ conn: value })),
+      setCall: (value: any) => set(() => ({ call: value })),
+      setMyStream: (value: any) => set(() => ({ myStream: value })),
+      setRemoteStream: (value: any) => set(() => ({ remoteStream: value })),
+      setId: (value: any) => set(() => ({ id: value })),
+      setConnectedPeers: (data: any) => set((state) => ({ conn: [...state.connectedPeers, data] })),
+    }),
+    { name: 'peer-storage' },
   ),
 )
