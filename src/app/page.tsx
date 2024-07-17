@@ -1,17 +1,20 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTheme } from 'next-themes'
+import Peer from 'peerjs'
 import { Box, Button, Flex, Heading, Text, TextField } from '@radix-ui/themes'
 import { Icon } from '@iconify/react'
-import { useState } from 'react'
-import { useTheme } from 'next-themes'
 import { generateUUID } from '@lib/helpers/generate-id'
 import ThemeToogle from '@lib/components/theme-toggle'
-import { PeerProvider } from '@lib/context/peer'
+import { NewPeerProvider, useNewPeer } from '@lib/context/peer2'
 
 const Content = () => {
   const { theme } = useTheme()
   const router = useRouter()
+
+  const { peerUser, setPeerUser } = useNewPeer()
 
   const [kode, setKode] = useState<string>('')
 
@@ -20,20 +23,41 @@ const Content = () => {
     router.push('/room/' + id)
   }
 
+  // watched
+  useEffect(() => {
+    if (peerUser) {
+      console.log('peerUser = ', peerUser)
+    }
+  }, [peerUser])
+
+  // mounted
+  useEffect(() => {
+    const peer = new Peer()
+    setPeerUser(peer)
+  }, [setPeerUser])
+
   return (
     <Box className=" h-screen w-full">
       <Flex justify="center" direction="column" gap="4" align="center" height="100%">
-        <Icon
-          icon="fluent:video-chat-16-filled"
-          width={100}
-          height={100}
-          color={theme === 'dark' ? '#1cc898' : '#008e6a'}
-        />
+        <Flex justify="center" gap="4" align="center">
+          <Icon
+            icon="noto:smiling-face-with-open-mouth-and-closed-eyes"
+            width={100}
+            height={100}
+            color={theme === 'dark' ? '#1cc898' : '#008e6a'}
+          />
+          <Icon
+            icon="noto:face-with-stuck-out-tongue-and-winking-eye"
+            width={100}
+            height={100}
+            color={theme === 'dark' ? '#1cc898' : '#008e6a'}
+          />
+        </Flex>
         <Heading size="8" className="text-center text-balance">
-          Rapat dan panggilan video untuk semua orang
+          Kongko
         </Heading>
         <Text as="div" size="4" className="text-center text-balance">
-          Terhubung, berkolaborasi, dan merayakan dari mana saja dengan Google Meet
+          Mengobrol dan bersenda gurau dari mana saja
         </Text>
         <Flex
           justify="center"
@@ -50,7 +74,7 @@ const Content = () => {
           >
             <Icon icon="mage:video-plus" width={20} height={20} />
             <Text as="div" size="3" className="text-center text-balance">
-              Mulai meet
+              Bikin tempat kongko
             </Text>
           </Button>
           <Flex
@@ -60,7 +84,7 @@ const Content = () => {
             className="flex-col w-full md:flex-row md:w-auto"
           >
             <TextField.Root
-              placeholder="Masukkan kode room"
+              placeholder="Masukkan kode kongko"
               size="3"
               className="w-full sm:w-1/2 md:w-[240px]"
               value={kode || ''}
@@ -87,9 +111,9 @@ const Content = () => {
 
 export default function Home() {
   return (
-    <>
+    <NewPeerProvider>
       <Content />
       <ThemeToogle />
-    </>
+    </NewPeerProvider>
   )
 }

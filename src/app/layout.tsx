@@ -22,7 +22,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning={true}>
       <body className={inter.className}>
         <ThemeProvider attribute="class">
-          <Theme accentColor="jade">{children}</Theme>
+          <Theme accentColor="ruby">{children}</Theme>
         </ThemeProvider>
       </body>
     </html>

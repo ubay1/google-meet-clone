@@ -139,7 +139,8 @@ export const usePeerStore = create<PeerState>()(
       setMyStream: (value: any) => set(() => ({ myStream: value })),
       setRemoteStream: (value: any) => set(() => ({ remoteStream: value })),
       setId: (value: any) => set(() => ({ id: value })),
-      setConnectedPeers: (data: any) => set((state) => ({ conn: [...state.connectedPeers, data] })),
+      setConnectedPeers: (data: any) =>
+        set((state) => ({ connectedPeers: [...state.connectedPeers, data] })),
     }),
     { name: 'peer-storage' },
   ),
